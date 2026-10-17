@@ -25,15 +25,14 @@
         
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* FIX: Force absolute dark background on HTML and Body */
-        html { background-color: #140A07 !important; height: 100%; }
+        html { background-color: #140A07 !important; min-height: 100vh; }
         
         body { 
             background-color: #140A07 !important;
             background-image: radial-gradient(rgba(243, 192, 67, 0.05) 1px, transparent 1px); 
             background-size: 25px 25px;
             color: var(--text-light); padding-bottom: 85px; min-height: 100vh;
-            scroll-behavior: smooth; -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth; -webkit-font-smoothing: antialiased; margin: 0;
         }
 
         body { top: 0 !important; position: static !important; }
@@ -46,14 +45,12 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
             border: 1px solid var(--glass-border) !important;
             box-shadow: var(--glass-shadow), var(--glass-highlight) !important;
-            transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+            /* 3D transforms are now handled dynamically by the JS engine below */
+            transform-style: preserve-3d;
         }
-        
-        @media (hover: hover) { .glass-card.interactive:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(243, 192, 67, 0.15), var(--glass-highlight) !important; } }
-        .glass-card.interactive:active, .action-btn:active { transform: scale(0.96) !important; }
 
         @keyframes shimmerPulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-        .menu-item-img, .bs-slide { animation: shimmerPulse 2.5s infinite ease-in-out; }
+        .menu-item-img, .bs-slide { animation: shimmerPulse 2.5s infinite ease-in-out; background: rgba(255,255,255,0.05); }
 
         .custom-lang-selector {
             background: rgba(20, 10, 7, 0.8); color: var(--primary-gold);
@@ -76,7 +73,7 @@
         .pwa-logo { width: 55px; height: 55px; border-radius: 14px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .pwa-btn-install { background: linear-gradient(45deg, var(--primary-gold), #ffd32a); color: #000; border: none; padding: 10px 22px; border-radius: 25px; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; background: #140A07; }
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; background: rgba(10,5,3,0.98); backdrop-filter: blur(15px); }
         .auth-logo { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--primary-gold); margin-bottom: 25px; box-shadow: 0 0 30px rgba(243, 192, 67, 0.2); }
         .google-btn { background: #fff; color: #111; font-family: 'Poppins', sans-serif; font-weight: 700; padding: 14px 28px; border-radius: 30px; border: none; font-size: 1.05rem; display: flex; align-items: center; gap: 12px; cursor: pointer; margin-top: 35px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
 
@@ -86,11 +83,13 @@
 
         /* ZOMATO SEARCH BAR CSS */
         .search-container { padding: 10px 15px 20px 15px; }
-        .search-input { width: 100%; padding: 14px 22px; border-radius: 30px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-light); font-size: 0.95rem; outline: none; }
+        .search-input { width: 100%; padding: 14px 22px; border-radius: 30px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-light); font-size: 0.95rem; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); cursor: text; }
+        
         .search-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #140A07; z-index: 200000; display: none; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.17, 0.84, 0.44, 1); }
         .search-overlay.active { display: flex !important; }
         .search-overlay-header { display: flex; align-items: center; padding: 15px 20px; gap: 15px; border-bottom: 1px solid var(--glass-border); background: rgba(20,10,7,0.9); }
         .so-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: var(--text-light); font-size: 1rem; outline: none; }
+        .so-input:focus { border-color: var(--primary-gold); }
         
         .so-category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 15px; text-align: center; }
         .so-cat-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; }
@@ -98,38 +97,44 @@
         .so-cat-img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 2px solid var(--glass-border); box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .so-cat-name { font-size: 0.8rem; color: var(--text-light); font-weight: 600; }
         
-        .so-result-item { display: flex; align-items: center; gap: 15px; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); margin-bottom: 10px; cursor: pointer; }
+        .so-result-item { display: flex; align-items: center; gap: 15px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); margin-bottom: 10px; cursor: pointer; transition: 0.2s;}
+        .so-result-item:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
         .so-result-img { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; }
+        .so-result-info { flex: 1; display: flex; flex-direction: column; }
+        .so-result-name { font-size: 1.05rem; font-weight: 700; color: var(--text-light); margin-bottom: 5px; }
+        .so-result-price { font-size: 0.95rem; color: var(--primary-gold); font-weight: 800; }
         .so-result-add { border: 1px solid var(--primary-gold); color: var(--primary-gold); background: rgba(243,192,67,0.1); padding: 6px 16px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; pointer-events: none; }
 
-        /* RESPONSIVE DESKTOP & LAPTOP FIXES */
         .banner-container { padding: 0 15px 20px 15px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; scrollbar-width: none; }
         .banner-container::-webkit-scrollbar { display: none; }
-        .banner-card { position: relative; border-radius: 20px; overflow: hidden; scroll-snap-align: center; flex-shrink: 0; }
-        .banner-card img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: -1; }
-        .banner-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.9)); padding: 20px 15px 15px; }
+        .banner-card { position: relative; border-radius: 20px; overflow: hidden; scroll-snap-align: center; flex-shrink: 0; box-shadow: var(--glass-shadow); border: 1px solid var(--glass-border); cursor: pointer; }
+        .banner-card img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
+        .banner-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); padding: 30px 15px 15px; z-index: 2; pointer-events: none;}
         
         .categories { display: flex; overflow-x: auto; padding: 0 15px 15px 15px; gap: 12px; scrollbar-width: none; }
         .categories::-webkit-scrollbar { display: none; }
-        .cat-chip { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-light); padding: 10px 20px; border-radius: 25px; white-space: nowrap; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .cat-chip { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-light); padding: 10px 20px; border-radius: 25px; white-space: nowrap; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.3s; backdrop-filter: blur(10px); }
         .cat-chip.active { background: var(--primary-gold); color: #111; border-color: var(--primary-gold); box-shadow: 0 5px 15px rgba(243, 192, 67, 0.3); }
 
         .menu-item { border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; }
         .menu-item-img { width: 100%; object-fit: cover; border-bottom: 1px solid var(--glass-border); }
         .menu-item-info { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
+        .menu-item-title { font-size: 0.95rem; font-weight: 700; color: var(--text-light); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+        .menu-item-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; pointer-events: none; }
         .menu-item-price { color: var(--primary-gold); font-weight: 800; font-size: 1.15rem; }
         .add-btn { background: rgba(243, 192, 67, 0.1); color: var(--primary-gold); border: 1px solid var(--primary-gold); padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer;}
 
-        /* MAGIC RESPONSIVE GRID (Fixes laptop sizing) */
         @media (max-width: 767px) {
-            .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; }
-            .menu-item-img { height: 140px; }
             .banner-card { min-width: 88vw; height: 160px; }
+            .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; }
+            .menu-item-img { height: 140px; pointer-events: none; }
         }
         @media (min-width: 768px) {
-            .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-            .menu-item-img { height: 180px; }
-            .banner-card { width: 450px; height: 220px; }
+            .banner-card { min-width: 450px !important; height: 240px !important; }
+            .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; padding: 20px; }
+            .menu-item-img { height: 200px; pointer-events: none; }
+            .so-category-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            .so-cat-img { width: 90px; height: 90px; }
         }
 
         .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: var(--text-light); font-size: 0.95rem; outline: none; transition: 0.3s; }
@@ -166,7 +171,18 @@
 
     <div id="custom-toast">Notice</div>
 
-    <!-- Premium PWA Prompt -->
+    <!-- Auth Overlay (Hidden by Default) -->
+    <div id="auth-overlay">
+        <span class="bs-close" style="top: 25px; right: 25px;" onclick="document.getElementById('auth-overlay').style.display='none'">✕</span>
+        <img src="./logo.png" alt="Khaugulya Logo" class="auth-logo" onerror="this.src='https://placehold.co/130x130/23120B/F3C043?text=KC'">
+        <h1 style="color: var(--primary-gold); font-weight: 800; font-size: 2.2rem; letter-spacing: 1px;">खाऊगुल्या</h1>
+        <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.95rem;">Please login to continue</p>
+        <button class="google-btn" onclick="window.triggerGoogleLogin()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G">
+            Continue with Google
+        </button>
+    </div>
+
     <div id="pwa-install-prompt" class="pwa-prompt-overlay">
         <div class="pwa-prompt-card glass-card">
             <img src="./logo.png" alt="Logo" class="pwa-logo" onerror="this.src='https://placehold.co/60x60/23120B/F3C043?text=KC'">
@@ -194,12 +210,10 @@
             <div style="flex: 1;"><input type="text" id="overlay-search-input" class="so-input" placeholder="Search dish name..." oninput="window.handleOverlaySearch()" autocomplete="off"></div>
         </div>
         <div style="flex: 1; overflow-y: auto; padding: 20px;">
-            <!-- Category Default View -->
             <div id="so-default-view">
                 <h3 style="font-size: 1rem; color: var(--primary-gold); margin-bottom: 20px; font-weight: 700;">What's on your mind?</h3>
                 <div class="so-category-grid" id="so-category-grid"></div>
             </div>
-            <!-- Results View -->
             <div id="so-results-view" style="display: none;">
                 <div id="so-results-list"></div>
             </div>
@@ -221,17 +235,6 @@
         </div>
     </div>
 
-    <!-- Auth Glass Screen -->
-    <div id="auth-overlay">
-        <img src="./logo.png" alt="Khaugulya Logo" class="auth-logo" onerror="this.src='https://placehold.co/130x130/23120B/F3C043?text=KC'">
-        <h1 style="color: var(--primary-gold); font-weight: 800; font-size: 2.2rem; letter-spacing: 1px;">खाऊगुल्या</h1>
-        <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.95rem;">Premium Dining & Delivery</p>
-        <button class="google-btn" onclick="window.triggerGoogleLogin()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G">
-            Continue with Google
-        </button>
-    </div>
-
     <!-- Header -->
     <div class="header">
         <div class="header-brand">
@@ -248,7 +251,7 @@
             <select class="custom-lang-selector notranslate" onchange="window.triggerTranslation(this.value)">
                 <option value="en">Eng</option><option value="hi">हिंदी</option><option value="mr">मराठी</option>
             </select>
-            <div id="profile-icon-btn" onclick="window.openProfile()"></div>
+            <div id="profile-icon-btn" onclick="window.openProfile()" style="font-size: 1.5rem; cursor: pointer;">👤</div>
         </div>
     </div>
 
@@ -264,7 +267,7 @@
     </div>
 
     <div id="view-prebook" class="app-section">
-        <div style="padding: 20px;">
+        <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
             <div class="glass-card" style="padding: 25px; border-radius: 20px;">
                 <h2 style="color: var(--primary-gold); margin-bottom: 25px;">🪑 Reserve a Table</h2>
                 <div class="form-group"><label>Name</label><input type="text" id="pb-name" class="input-field" placeholder="Full Name"></div>
@@ -283,7 +286,7 @@
     </div>
 
     <div id="view-cart" class="app-section">
-        <div style="padding: 20px;">
+        <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
             <div id="active-tab-ui" class="glass-card" style="padding: 20px; border-radius: 20px; margin-bottom: 25px; display: none; border-color: var(--success) !important;">
                 <h3 style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">🍽️ Table <span id="ui-tab-table"></span> <span style="color: var(--success); float: right; font-size: 0.9rem;">Running Tab</span></h3>
                 <div id="ui-tab-items" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 15px;"></div>
@@ -319,7 +322,7 @@
     </div>
 
     <div id="view-track" class="app-section">
-        <div style="padding: 20px;">
+        <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
             <h2 style="color: var(--primary-gold); margin-bottom: 5px;">📍 Live Tracking</h2>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px;">Real-time kitchen status.</p>
             <div id="live-tracking-box">
@@ -328,7 +331,15 @@
         </div>
     </div>
 
-    <!-- Modals & Bottom Sheets -->
+    <!-- Modals -->
+    <div class="modal-overlay" id="history-modal">
+        <div class="glass-card" style="width: 100%; max-width: 450px; padding: 25px; border-radius: 20px; position: relative;">
+            <h2 style="color: var(--primary-gold); margin-bottom: 20px;">📜 Order History</h2>
+            <div id="order-history-list"><p style="color: var(--text-muted); text-align: center; padding: 20px;">Loading...</p></div>
+            <span class="bs-close" style="top: 20px; right: 20px;" onclick="window.closeOrderHistory()">✕</span>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="profile-modal">
         <div class="glass-card" style="width: 100%; max-width: 400px; padding: 25px; border-radius: 20px; position: relative;">
             <h2 style="color: var(--primary-gold); margin-bottom: 20px;">Your Profile</h2>
@@ -345,7 +356,7 @@
         <div class="bottom-sheet glass-card">
             <span class="bs-close" onclick="window.closeItemModal()">✕</span>
             <div class="bs-image-slider" id="bs-image-slider"></div>
-            <div style="padding: 25px;">
+            <div style="padding: 25px; max-width: 800px; margin: 0 auto;">
                 <h2 id="bs-title" style="font-size: 1.6rem; color: var(--primary-gold); font-weight: 800; margin-bottom: 8px;">Name</h2>
                 <p id="bs-desc" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 25px;">Description</p>
                 <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); padding: 15px; border-radius: 15px;">
@@ -356,12 +367,14 @@
                 </div>
             </div>
             <div style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,5,3,0.95); padding: 15px 20px 25px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; z-index: 10; backdrop-filter: blur(20px);">
-                <div style="display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid var(--primary-gold); border-radius: 12px; overflow: hidden; height: 50px;">
-                    <button style="background: transparent; color: var(--primary-gold); border: none; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer;" onclick="window.changeBsQty(-1)">-</button>
-                    <div id="bs-qty" style="width: 30px; text-align: center; font-weight: bold; font-size: 1.1rem; color: var(--text-light);">1</div>
-                    <button style="background: transparent; color: var(--primary-gold); border: none; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer;" onclick="window.changeBsQty(1)">+</button>
+                <div style="max-width: 800px; margin: 0 auto; width: 100%; display: flex; align-items: center;">
+                    <div style="display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid var(--primary-gold); border-radius: 12px; overflow: hidden; height: 50px;">
+                        <button style="background: transparent; color: var(--primary-gold); border: none; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer;" onclick="window.changeBsQty(-1)">-</button>
+                        <div id="bs-qty" style="width: 30px; text-align: center; font-weight: bold; font-size: 1.1rem; color: var(--text-light);">1</div>
+                        <button style="background: transparent; color: var(--primary-gold); border: none; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer;" onclick="window.changeBsQty(1)">+</button>
+                    </div>
+                    <button id="bs-add-btn" class="action-btn" style="margin-top: 0; margin-left: 15px; padding: 0; height: 50px;" onclick="window.confirmModalAdd()">Add</button>
                 </div>
-                <button id="bs-add-btn" class="action-btn" style="margin-top: 0; margin-left: 15px; padding: 0; height: 50px;" onclick="window.confirmModalAdd()">Add</button>
             </div>
         </div>
     </div>
@@ -374,11 +387,47 @@
         <div class="nav-item" onclick="try{window.switchNav('view-track', this);}catch(e){}"><div class="cart-badge" id="track-badge" style="background: var(--success); display: none;">!</div><span class="nav-icon">🚚</span><span>Track</span></div>
     </div>
 
-    <!-- SCRIPT 1: UI ENGINE -->
+    <!-- SCRIPT 1: UI ENGINE WITH 3D MOBILE TILT -->
     <script>
         window.fallbackImageSvg = "https://placehold.co/400x400/23120B/F3C043?text=Food";
         window.storeSettings = { storeOpen: true, dineInOpen: true, pickupOpen: true, gst: 0, handlingFee: 0 };
-        window.allMenuItems = []; window.cart = []; window.currentModalQty = 1; window.activeTabId = null;
+        window.allMenuItems = []; window.cart = []; window.currentModalQty = 1; window.activeTabId = null; window.auth = null;
+
+        // --- MOBILE 3D TOUCH ENGINE ---
+        window.apply3DTilt = function() {
+            const cards = document.querySelectorAll('.menu-item, .banner-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', handleMove);
+                card.addEventListener('touchmove', handleMove, {passive: true});
+                card.addEventListener('mouseleave', handleLeave);
+                card.addEventListener('touchend', handleLeave);
+
+                function handleMove(e) {
+                    const rect = card.getBoundingClientRect();
+                    let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                    let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                    
+                    const x = clientX - rect.left;
+                    const y = clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    // Dynamic math limits tilt to 12 degrees
+                    const rotateX = ((y - centerY) / centerY) * -12; 
+                    const rotateY = ((x - centerX) / centerX) * 12;
+                    
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(0.98)`;
+                    card.style.boxShadow = `0 15px 35px rgba(243, 192, 67, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)`;
+                    card.style.transition = 'none'; // Instant follow
+                }
+
+                function handleLeave() {
+                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)`;
+                    card.style.boxShadow = `var(--glass-shadow), var(--glass-highlight)`;
+                    card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease';
+                }
+            });
+        }
 
         let fsImg = document.getElementById('fs-image-view'); let fsModal = document.getElementById('fullscreen-image-modal');
         let currentScale = 1, initialDist = 0, lastX = 0, lastY = 0, translateX = 0, translateY = 0, lastTap = 0;
@@ -480,7 +529,9 @@
             if(sectionId === 'view-cart') { window.renderCart(); window.toggleCheckoutUI(); }
         }
 
+        /* DELAYED LOGIN FLOW LOGIC */
         window.openProfile = function() {
+            if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; return; }
             document.getElementById('prof-name').value = window.userProfile.name || ''; document.getElementById('prof-phone').value = window.userProfile.phone || ''; document.getElementById('prof-address').value = window.userProfile.address || '';
             document.getElementById('profile-modal').classList.add('active');
         }
@@ -489,6 +540,12 @@
             window.userProfile.name = document.getElementById('prof-name').value.trim(); window.userProfile.phone = document.getElementById('prof-phone').value.trim(); window.userProfile.address = document.getElementById('prof-address').value.trim();
             localStorage.setItem('khaugulya_user', JSON.stringify(window.userProfile)); window.closeProfile(); window.showToast("Profile details saved!", true);
         }
+
+        window.openOrderHistory = function() { 
+            if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; return; }
+            try { document.getElementById('history-modal').classList.add('active'); window.renderOrderHistoryUI(); } catch(err) {} 
+        }
+        window.closeOrderHistory = function() { document.getElementById('history-modal').classList.remove('active'); }
 
         window.setRating = function(stars) {
             window.currentRating = stars; const starSpans = document.querySelectorAll('#interactive-stars span');
@@ -513,6 +570,7 @@
                 const img = item.imageUrl || window.fallbackImageSvg;
                 container.innerHTML += `<div class="menu-item glass-card interactive" onclick="window.openItemModal('${item.id}')"><img src="${img}" onerror="this.src='${window.fallbackImageSvg}'" class="menu-item-img"><div class="menu-item-info"><div class="menu-item-title">${item.name}</div><div class="menu-item-footer"><div class="menu-item-price">₹${item.price}</div><button class="add-btn">ADD</button></div></div></div>`;
             });
+            window.apply3DTilt(); // Attach 3D physics to new cards
         }
 
         window.openItemModal = function(id) {
@@ -601,6 +659,7 @@
         import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+        // EXACT FIREBASE KEYS
         const firebaseConfig = {
             apiKey: "AIzaSyBFP9-ai5YGDftmx1rY0tN0koB7X24-T68",
             authDomain: "khaugulya-cafe-5f334.firebaseapp.com",
@@ -612,9 +671,11 @@
         };
 
         let app, db, auth, provider;
+        let tabUnsubscribe = null;
+        let trackingUnsubscribe = null;
 
         try {
-            app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); provider = new GoogleAuthProvider();
+            app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); provider = new GoogleAuthProvider(); window.auth = auth;
             onSnapshot(doc(db, "settings", "store_config"), (docSnap) => {
                 if(docSnap.exists()) {
                     window.storeSettings = docSnap.data(); const menuContainer = document.getElementById('menu-container');
@@ -626,22 +687,30 @@
 
         if(auth) {
             onAuthStateChanged(auth, (user) => {
+                // ALWAYS load menu and banners so guests can browse freely
+                if(window.allMenuItems.length === 0) { loadBanners(); loadMenu(); }
+
                 if (user) {
                     document.getElementById('auth-overlay').style.display = 'none';
                     window.userProfile.name = window.userProfile.name || user.displayName || ""; window.userProfile.email = user.email || ""; window.userProfile.uid = user.uid || ""; window.userProfile.photoURL = user.photoURL || "";
                     localStorage.setItem('khaugulya_user', JSON.stringify(window.userProfile));
                     if(user.photoURL) { document.getElementById('profile-icon-btn').innerHTML = `<img src="${user.photoURL}" class="profile-pic">`; }
-                    loadBanners(); loadMenu(); listenToActiveTab(user.uid); listenToLiveTracking(user.uid); 
-                } else { document.getElementById('auth-overlay').style.display = 'flex'; }
+                    listenToActiveTab(user.uid); listenToLiveTracking(user.uid); 
+                } else { 
+                    // Guest Mode
+                    document.getElementById('profile-icon-btn').innerHTML = `👤`;
+                    if(tabUnsubscribe) tabUnsubscribe();
+                    if(trackingUnsubscribe) trackingUnsubscribe();
+                }
             });
         }
 
         window.triggerGoogleLogin = async function() { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast("Login failed.", false); } };
-        window.triggerLogout = async function() { try { await signOut(auth); window.closeProfile(); } catch (e) {} };
+        window.triggerLogout = async function() { try { await signOut(auth); window.closeProfile(); window.showToast("Logged out.", true); } catch (e) {} };
 
         function listenToActiveTab(uid) {
             const q = query(collection(db, "orders"), where("customerUid", "==", uid));
-            onSnapshot(q, (snapshot) => {
+            tabUnsubscribe = onSnapshot(q, (snapshot) => {
                 const tabUI = document.getElementById('active-tab-ui'); const tabItemsList = document.getElementById('ui-tab-items');
                 let activeOrder = null;
                 snapshot.forEach(docSnap => { let d = docSnap.data(); if(d.type === 'dinein' && d.status === 'active') { activeOrder = { id: docSnap.id, ...d }; } });
@@ -656,7 +725,7 @@
 
         function listenToLiveTracking(uid) {
             const q = query(collection(db, "orders"), where("customerUid", "==", uid));
-            onSnapshot(q, (snapshot) => {
+            trackingUnsubscribe = onSnapshot(q, (snapshot) => {
                 const trackBox = document.getElementById('live-tracking-box'); const trackBadge = document.getElementById('track-badge');
                 const activeResList = document.getElementById('active-reservations-list'); const activeResBox = document.getElementById('active-reservations-box');
                 if(!trackBox) return;
@@ -688,13 +757,29 @@
             }, (error) => { document.getElementById('live-tracking-box').innerHTML = `<p style="color: var(--danger); text-align: center; padding: 20px;">Tracking Error: ${error.message}</p>`; });
         }
 
+        window.renderOrderHistoryUI = function() {
+            const container = document.getElementById('order-history-list'); if(!container) return; container.innerHTML = '';
+            if(!window.userOrdersCache || window.userOrdersCache.length === 0) { container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">No past orders found.</p>`; return; }
+            window.userOrdersCache.forEach(order => {
+                const idShort = order.id.slice(-5).toUpperCase(); let statusClass = 'color: var(--primary-gold);';
+                if(order.status === 'completed') statusClass = 'color: var(--success);'; if(order.status === 'cancelled') statusClass = 'color: var(--danger);';
+                if(order.type === 'table_reservation') {
+                    container.innerHTML += `<div class="glass-card" style="padding:15px; border-radius:15px; margin-bottom:12px; border-left: 4px solid var(--primary-gold) !important;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><strong style="color: var(--text-light);">Table for ${order.guests}</strong><div style="font-size: 0.8rem; color: var(--text-muted);">${order.time}</div></div><span style="background: rgba(0,0,0,0.4); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; ${statusClass}">${order.status.toUpperCase()}</span></div></div>`; return;
+                }
+                let itemsList = (order.items || []).map(i => `${i.qty}x ${i.name}`).join(', ');
+                container.innerHTML += `<div class="glass-card" style="padding:15px; border-radius:15px; margin-bottom:12px;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><div><strong style="color: var(--primary-gold);">Order #${idShort}</strong><div style="font-size: 0.75rem; color: var(--text-muted);">${order.type === 'dinein' ? '🍽️ Dine-in' : '🛍️ Pickup'}</div></div><span style="background: rgba(0,0,0,0.4); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold; ${statusClass}">${order.status.toUpperCase()}</span></div><p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 8px;">${itemsList}</p><div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; color: var(--primary-gold);"><span>Total Amount:</span><span>₹${order.total || 0}</span></div></div>`;
+            });
+        }
+
         window.requestBill = async function() {
+            if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; return; }
             if(!window.activeTabId) return;
             try { await updateDoc(doc(db, "orders", window.activeTabId), { status: "payment_pending", timestamp: serverTimestamp() }); window.showToast("🍽️ Waitstaff notified!", true); } 
             catch(e) { window.showToast("❌ Failed to request bill.", false); }
         }
 
         window.placeOrder = async function() {
+            if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; window.showToast("Please login to place your order.", false); return; }
             try {
                 if(!window.userProfile.phone) { window.showToast("⚠️ Add your phone number!", false); window.openProfile(); return; }
                 const type = document.querySelector('input[name="orderType"]:checked').value; 
@@ -716,16 +801,15 @@
                     await addDoc(collection(db, "orders"), { customerName: window.userProfile.name, customerPhone: window.userProfile.phone, customerUid: window.userProfile.uid, type: "pickup", items: window.cart, total: total, status: "pending", timestamp: serverTimestamp() }); window.showToast("✅ Pickup Order Placed!", true);
                 }
                 window.cart = []; localStorage.setItem('khaugulya_cart', '[]'); window.renderCart(); window.updateCartBadge(); window.switchNav('view-track', document.querySelectorAll('.nav-item')[3]);
-            } catch (error) { window.showToast("❌ Order Failed.", false); } finally { document.getElementById('place-order-btn').disabled = false; }
+            } catch (error) { window.showToast("❌ Order Failed.", false); } finally { document.getElementById('place-order-btn').disabled = false; document.getElementById('place-order-btn').innerText = "Send to Kitchen"; }
         }
 
         async function loadBanners() { 
             try {
                 const container = document.getElementById('banner-container'); const snapshot = await getDocs(collection(db, "banners")); container.innerHTML = '';
-                // FIX: Used absolute positioning img tag to guarantee it loads
-                snapshot.forEach(doc => { const data = doc.data(); container.innerHTML += `<div class="banner-card glass-card interactive"><img src="${data.imageUrl}" onerror="this.src='${window.fallbackImageSvg}'"><div class="banner-overlay"><h3 style="color:var(--primary-gold); font-size:1.2rem; font-weight:800;">${data.title}</h3><p style="font-size:0.85rem; font-weight:600;">${data.code}</p></div></div>`; });
+                snapshot.forEach(doc => { const data = doc.data(); container.innerHTML += `<div class="banner-card interactive"><img src="${data.imageUrl}" onerror="this.src='${window.fallbackImageSvg}'"><div class="banner-overlay"><h3 style="color:var(--primary-gold); font-size:1.2rem; font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,0.8);">${data.title}</h3><p style="font-size:0.85rem; font-weight:600; text-shadow:0 2px 4px rgba(0,0,0,0.8); color:var(--text-light);">${data.code}</p></div></div>`; });
                 window.startBannerAutoScroll(); 
-            } catch (e) { document.getElementById('banner-container').innerHTML = `<p style="color:var(--danger); padding:15px;">Banner Error</p>`; }
+            } catch (e) { document.getElementById('banner-container').innerHTML = `<p style="color:var(--danger); padding: 15px;">Banner Error</p>`; }
         }
         
         async function loadMenu() { 
@@ -736,10 +820,11 @@
                 catContainer.innerHTML = `<div class="cat-chip filter-btn" onclick="window.openFilterModal()">⚙️ Filter</div><div class="cat-chip active" onclick="window.filterMenu('All')">All</div>`;
                 categories.forEach(cat => { catContainer.innerHTML += `<div class="cat-chip" onclick="window.filterMenu('${cat.replace(/'/g, "\\'")}')">${cat}</div>`; });
                 window.renderMenuItems(window.allMenuItems);
-            } catch (e) { document.getElementById('menu-container').innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--danger); padding: 30px;">Database Error: ${e.message}</p>`; }
+            } catch (e) { document.getElementById('menu-container').innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--danger); padding: 30px;">Menu Database Error</p>`; }
         }
 
         window.submitPrebook = async function() { 
+            if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; window.showToast("Please login to reserve a table.", false); return; }
             const name = document.getElementById('pb-name').value; const phone = document.getElementById('pb-phone').value; const guests = document.getElementById('pb-guests').value; const time = document.getElementById('pb-time').value;
             if(!name || !phone || !guests || !time) return window.showToast("⚠️ Fill all fields.", false);
             const btn = document.getElementById('pb-btn'); btn.innerText = "Booking..."; btn.disabled = true;
