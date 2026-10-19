@@ -45,7 +45,6 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
             border: 1px solid var(--glass-border) !important;
             box-shadow: var(--glass-shadow), var(--glass-highlight) !important;
-            /* 3D transforms are now handled dynamically by the JS engine below */
             transform-style: preserve-3d;
         }
 
@@ -81,7 +80,6 @@
         .header-logo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary-gold); object-fit: cover; }
         .profile-pic { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--primary-gold); object-fit: cover; cursor: pointer;}
 
-        /* ZOMATO SEARCH BAR CSS */
         .search-container { padding: 10px 15px 20px 15px; }
         .search-input { width: 100%; padding: 14px 22px; border-radius: 30px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-light); font-size: 0.95rem; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); cursor: text; }
         
@@ -157,6 +155,10 @@
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; gap: 6px; cursor: pointer; position: relative; width: 25%; transition: 0.3s;}
         .nav-item.active { color: var(--primary-gold); transform: translateY(-2px); }
         .nav-icon { font-size: 1.4rem; }
+        
+        /* EXPONENT CART BADGE */
+        .cart-badge { position: absolute; top: -6px; right: 18px; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; border: 2px solid #140A07; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .cart-badge.pop { transform: scale(1.4); }
 
         .fs-image-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 999999; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
         .fs-image-modal.active { display: flex; animation: fadeInBg 0.3s; }
@@ -170,6 +172,9 @@
 <body>
 
     <div id="custom-toast">Notice</div>
+
+    <!-- Store Closed Banner -->
+    <div id="store-closed-banner" style="display:none; background: var(--danger); color: #fff; text-align: center; padding: 8px; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; z-index: 99;">🚨 We are currently closed. Browsing only!</div>
 
     <!-- Auth Overlay (Hidden by Default) -->
     <div id="auth-overlay">
@@ -383,7 +388,7 @@
     <div class="bottom-nav">
         <div class="nav-item active" onclick="try{window.switchNav('view-menu', this);}catch(e){}"><span class="nav-icon">🏠</span><span>Menu</span></div>
         <div class="nav-item" onclick="try{window.switchNav('view-prebook', this);}catch(e){}"><span class="nav-icon">🪑</span><span>Reserve</span></div>
-        <div class="nav-item" onclick="try{window.switchNav('view-cart', this);}catch(e){}"><div class="cart-badge" id="cart-badge">0</div><span class="nav-icon">🛒</span><span>Cart</span></div>
+        <div class="nav-item" onclick="try{window.switchNav('view-cart', this);}catch(e){}"><div class="cart-badge" id="cart-badge" style="display:none;">0</div><span class="nav-icon">🛒</span><span>Cart</span></div>
         <div class="nav-item" onclick="try{window.switchNav('view-track', this);}catch(e){}"><div class="cart-badge" id="track-badge" style="background: var(--success); display: none;">!</div><span class="nav-icon">🚚</span><span>Track</span></div>
     </div>
 
@@ -412,13 +417,12 @@
                     const centerX = rect.width / 2;
                     const centerY = rect.height / 2;
                     
-                    // Dynamic math limits tilt to 12 degrees
                     const rotateX = ((y - centerY) / centerY) * -12; 
                     const rotateY = ((x - centerX) / centerX) * 12;
                     
                     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(0.98)`;
                     card.style.boxShadow = `0 15px 35px rgba(243, 192, 67, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)`;
-                    card.style.transition = 'none'; // Instant follow
+                    card.style.transition = 'none'; 
                 }
 
                 function handleLeave() {
@@ -529,7 +533,6 @@
             if(sectionId === 'view-cart') { window.renderCart(); window.toggleCheckoutUI(); }
         }
 
-        /* DELAYED LOGIN FLOW LOGIC */
         window.openProfile = function() {
             if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; return; }
             document.getElementById('prof-name').value = window.userProfile.name || ''; document.getElementById('prof-phone').value = window.userProfile.phone || ''; document.getElementById('prof-address').value = window.userProfile.address || '';
@@ -566,11 +569,18 @@
         window.renderMenuItems = function(items) {
             const container = document.getElementById('menu-container'); if(!container) return; container.innerHTML = '';
             if(items.length === 0) { container.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 30px;">No items found.</p>`; return; }
+            
+            // Greyscale mode calculation
+            let isClosed = !window.storeSettings.storeOpen;
+            let cardStyle = isClosed ? "filter: grayscale(100%); opacity: 0.6; pointer-events: none;" : "";
+            let btnText = isClosed ? "CLOSED" : "ADD";
+            let btnStyle = isClosed ? "background: #333; color: #777; border-color: #555;" : "";
+
             items.forEach(item => {
                 const img = item.imageUrl || window.fallbackImageSvg;
-                container.innerHTML += `<div class="menu-item glass-card interactive" onclick="window.openItemModal('${item.id}')"><img src="${img}" onerror="this.src='${window.fallbackImageSvg}'" class="menu-item-img"><div class="menu-item-info"><div class="menu-item-title">${item.name}</div><div class="menu-item-footer"><div class="menu-item-price">₹${item.price}</div><button class="add-btn">ADD</button></div></div></div>`;
+                container.innerHTML += `<div class="menu-item glass-card interactive" style="${cardStyle}" onclick="window.openItemModal('${item.id}')"><img src="${img}" onerror="this.src='${window.fallbackImageSvg}'" class="menu-item-img"><div class="menu-item-info"><div class="menu-item-title">${item.name}</div><div class="menu-item-footer"><div class="menu-item-price">₹${item.price}</div><button class="add-btn" style="${btnStyle}">${btnText}</button></div></div></div>`;
             });
-            window.apply3DTilt(); // Attach 3D physics to new cards
+            window.apply3DTilt();
         }
 
         window.openItemModal = function(id) {
@@ -616,7 +626,14 @@
         window.updateCartBadge = function() {
             const badge = document.getElementById('cart-badge'); if(!badge) return;
             let totalItems = window.cart.reduce((sum, item) => sum + item.qty, 0);
-            if(totalItems > 0) { badge.style.display = 'flex'; badge.innerText = totalItems; } else { badge.style.display = 'none'; }
+            if(totalItems > 0) { 
+                badge.style.display = 'flex'; 
+                if (badge.innerText != totalItems) {
+                    badge.innerText = totalItems; 
+                    badge.classList.add('pop'); 
+                    setTimeout(() => badge.classList.remove('pop'), 200);
+                }
+            } else { badge.style.display = 'none'; }
         }
 
         window.toggleCheckoutUI = function() {
@@ -653,7 +670,7 @@
         document.addEventListener('DOMContentLoaded', () => { try { window.updateCartBadge(); } catch(e) {} });
     </script>
 
-    <!-- SCRIPT 2: FIREBASE ENGINE (NO-INDEX/LOCAL SORTING) -->
+    <!-- SCRIPT 2: FIREBASE ENGINE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -678,16 +695,17 @@
             app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); provider = new GoogleAuthProvider(); window.auth = auth;
             onSnapshot(doc(db, "settings", "store_config"), (docSnap) => {
                 if(docSnap.exists()) {
-                    window.storeSettings = docSnap.data(); const menuContainer = document.getElementById('menu-container');
-                    if(menuContainer) { if(!window.storeSettings.storeOpen) { menuContainer.classList.add('greyscale-mode'); } else { menuContainer.classList.remove('greyscale-mode'); } }
+                    window.storeSettings = docSnap.data(); 
+                    if(!window.storeSettings.storeOpen) { document.getElementById('store-closed-banner').style.display = 'block'; } 
+                    else { document.getElementById('store-closed-banner').style.display = 'none'; }
+                    window.renderMenuItems(window.allMenuItems); // Refresh menu to apply greyout
                     if (document.getElementById('view-cart').classList.contains('active')) { window.renderCart(); window.toggleCheckoutUI(); }
                 }
-            }, (error) => { console.error("Settings Error:", error); });
+            });
         } catch(err) { console.error("Firebase Init Failed:", err); }
 
         if(auth) {
             onAuthStateChanged(auth, (user) => {
-                // ALWAYS load menu and banners so guests can browse freely
                 if(window.allMenuItems.length === 0) { loadBanners(); loadMenu(); }
 
                 if (user) {
@@ -697,7 +715,6 @@
                     if(user.photoURL) { document.getElementById('profile-icon-btn').innerHTML = `<img src="${user.photoURL}" class="profile-pic">`; }
                     listenToActiveTab(user.uid); listenToLiveTracking(user.uid); 
                 } else { 
-                    // Guest Mode
                     document.getElementById('profile-icon-btn').innerHTML = `👤`;
                     if(tabUnsubscribe) tabUnsubscribe();
                     if(trackingUnsubscribe) trackingUnsubscribe();
@@ -734,7 +751,7 @@
                 fetchedOrders.sort((a,b) => { let ta = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0; let tb = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0; return tb - ta; });
                 
                 trackBox.innerHTML = ''; if(activeResList) activeResList.innerHTML = '';
-                let activeFoodCount = 0; let activeResCount = 0;
+                let activeFoodCount = 0; let activeResCount = 0; window.userOrdersCache = fetchedOrders;
 
                 fetchedOrders.forEach(order => {
                     if(order.type === 'table_reservation') {
@@ -754,7 +771,7 @@
 
                 if(activeFoodCount === 0) { trackBox.innerHTML = `<p style="text-align: center; color: var(--text-muted); margin-top: 40px;">No active orders.</p>`; if(trackBadge) trackBadge.style.display = 'none'; } else { if(trackBadge) trackBadge.style.display = 'flex'; }
                 if(activeResBox) { activeResBox.style.display = activeResCount > 0 ? 'block' : 'none'; }
-            }, (error) => { document.getElementById('live-tracking-box').innerHTML = `<p style="color: var(--danger); text-align: center; padding: 20px;">Tracking Error: ${error.message}</p>`; });
+            });
         }
 
         window.renderOrderHistoryUI = function() {
@@ -808,8 +825,8 @@
             try {
                 const container = document.getElementById('banner-container'); const snapshot = await getDocs(collection(db, "banners")); container.innerHTML = '';
                 snapshot.forEach(doc => { const data = doc.data(); container.innerHTML += `<div class="banner-card interactive"><img src="${data.imageUrl}" onerror="this.src='${window.fallbackImageSvg}'"><div class="banner-overlay"><h3 style="color:var(--primary-gold); font-size:1.2rem; font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,0.8);">${data.title}</h3><p style="font-size:0.85rem; font-weight:600; text-shadow:0 2px 4px rgba(0,0,0,0.8); color:var(--text-light);">${data.code}</p></div></div>`; });
-                window.startBannerAutoScroll(); 
-            } catch (e) { document.getElementById('banner-container').innerHTML = `<p style="color:var(--danger); padding: 15px;">Banner Error</p>`; }
+                window.startBannerAutoScroll(); window.apply3DTilt();
+            } catch (e) {}
         }
         
         async function loadMenu() { 
@@ -820,7 +837,7 @@
                 catContainer.innerHTML = `<div class="cat-chip filter-btn" onclick="window.openFilterModal()">⚙️ Filter</div><div class="cat-chip active" onclick="window.filterMenu('All')">All</div>`;
                 categories.forEach(cat => { catContainer.innerHTML += `<div class="cat-chip" onclick="window.filterMenu('${cat.replace(/'/g, "\\'")}')">${cat}</div>`; });
                 window.renderMenuItems(window.allMenuItems);
-            } catch (e) { document.getElementById('menu-container').innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--danger); padding: 30px;">Menu Database Error</p>`; }
+            } catch (e) {}
         }
 
         window.submitPrebook = async function() { 
