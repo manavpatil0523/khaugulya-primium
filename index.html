@@ -66,6 +66,16 @@
         }
         #custom-toast.show { transform: translateX(-50%) translateY(0); }
 
+        /* Store Closed Banner */
+        .store-closed-banner { display: none; background: rgba(255, 71, 87, 0.9); color: #fff; text-align: center; padding: 12px; font-weight: 700; font-size: 0.85rem; position: sticky; top: 75px; z-index: 90; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(255,71,87,0.3); }
+        .store-closed-banner.active { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        /* Full Greyscale Mode */
+        .greyscale-mode .menu-item { filter: grayscale(100%); opacity: 0.6; pointer-events: none; }
+        .greyscale-mode .add-btn { background: #333; color: #888; border-color: #555; }
+        .greyscale-mode .banner-card { filter: grayscale(100%); opacity: 0.6; pointer-events: none; }
+
         .pwa-prompt-overlay { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; display: flex; justify-content: center; z-index: 99999; transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.17, 0.84, 0.44, 1); pointer-events: none; }
         .pwa-prompt-overlay.show { transform: translateY(-85px); pointer-events: auto; } 
         .pwa-prompt-card { border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 15px; width: 100%; max-width: 400px; }
@@ -155,10 +165,10 @@
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem; font-weight: 600; gap: 6px; cursor: pointer; position: relative; width: 25%; transition: 0.3s;}
         .nav-item.active { color: var(--primary-gold); transform: translateY(-2px); }
         .nav-icon { font-size: 1.4rem; }
-        
-        /* EXPONENT CART BADGE */
-        .cart-badge { position: absolute; top: -6px; right: 18px; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; border: 2px solid #140A07; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .cart-badge.pop { transform: scale(1.4); }
+
+        /* EXPONENT CART BADGE CSS */
+        .cart-badge { position: absolute; top: -5px; right: 20px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #140A07; z-index: 10; display: none; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
         .fs-image-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 999999; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
         .fs-image-modal.active { display: flex; animation: fadeInBg 0.3s; }
@@ -173,8 +183,10 @@
 
     <div id="custom-toast">Notice</div>
 
-    <!-- Store Closed Banner -->
-    <div id="store-closed-banner" style="display:none; background: var(--danger); color: #fff; text-align: center; padding: 8px; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; z-index: 99;">🚨 We are currently closed. Browsing only!</div>
+    <!-- Store Closed Alert Banner -->
+    <div id="store-closed-banner" class="store-closed-banner">
+        🚨 Store is currently CLOSED. Browse the menu, but ordering is paused.
+    </div>
 
     <!-- Auth Overlay (Hidden by Default) -->
     <div id="auth-overlay">
@@ -388,7 +400,8 @@
     <div class="bottom-nav">
         <div class="nav-item active" onclick="try{window.switchNav('view-menu', this);}catch(e){}"><span class="nav-icon">🏠</span><span>Menu</span></div>
         <div class="nav-item" onclick="try{window.switchNav('view-prebook', this);}catch(e){}"><span class="nav-icon">🪑</span><span>Reserve</span></div>
-        <div class="nav-item" onclick="try{window.switchNav('view-cart', this);}catch(e){}"><div class="cart-badge" id="cart-badge" style="display:none;">0</div><span class="nav-icon">🛒</span><span>Cart</span></div>
+        <!-- Exponent Cart Badge is now inside this relative nav-item -->
+        <div class="nav-item" onclick="try{window.switchNav('view-cart', this);}catch(e){}"><div class="cart-badge" id="cart-badge">0</div><span class="nav-icon">🛒</span><span>Cart</span></div>
         <div class="nav-item" onclick="try{window.switchNav('view-track', this);}catch(e){}"><div class="cart-badge" id="track-badge" style="background: var(--success); display: none;">!</div><span class="nav-icon">🚚</span><span>Track</span></div>
     </div>
 
@@ -533,6 +546,7 @@
             if(sectionId === 'view-cart') { window.renderCart(); window.toggleCheckoutUI(); }
         }
 
+        /* DELAYED LOGIN FLOW LOGIC */
         window.openProfile = function() {
             if(!window.auth || !window.auth.currentUser) { document.getElementById('auth-overlay').style.display = 'flex'; return; }
             document.getElementById('prof-name').value = window.userProfile.name || ''; document.getElementById('prof-phone').value = window.userProfile.phone || ''; document.getElementById('prof-address').value = window.userProfile.address || '';
@@ -570,17 +584,14 @@
             const container = document.getElementById('menu-container'); if(!container) return; container.innerHTML = '';
             if(items.length === 0) { container.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 30px;">No items found.</p>`; return; }
             
-            // Greyscale mode calculation
-            let isClosed = !window.storeSettings.storeOpen;
-            let cardStyle = isClosed ? "filter: grayscale(100%); opacity: 0.6; pointer-events: none;" : "";
-            let btnText = isClosed ? "CLOSED" : "ADD";
-            let btnStyle = isClosed ? "background: #333; color: #777; border-color: #555;" : "";
+            // Checking if store is closed to toggle button text
+            let btnText = (window.storeSettings && !window.storeSettings.storeOpen) ? "CLOSED" : "ADD";
 
             items.forEach(item => {
                 const img = item.imageUrl || window.fallbackImageSvg;
-                container.innerHTML += `<div class="menu-item glass-card interactive" style="${cardStyle}" onclick="window.openItemModal('${item.id}')"><img src="${img}" onerror="this.src='${window.fallbackImageSvg}'" class="menu-item-img"><div class="menu-item-info"><div class="menu-item-title">${item.name}</div><div class="menu-item-footer"><div class="menu-item-price">₹${item.price}</div><button class="add-btn" style="${btnStyle}">${btnText}</button></div></div></div>`;
+                container.innerHTML += `<div class="menu-item glass-card interactive" onclick="window.openItemModal('${item.id}')"><img src="${img}" onerror="this.src='${window.fallbackImageSvg}'" class="menu-item-img"><div class="menu-item-info"><div class="menu-item-title">${item.name}</div><div class="menu-item-footer"><div class="menu-item-price">₹${item.price}</div><button class="add-btn">${btnText}</button></div></div></div>`;
             });
-            window.apply3DTilt();
+            window.apply3DTilt(); 
         }
 
         window.openItemModal = function(id) {
@@ -623,16 +634,14 @@
             if(index !== -1) { window.cart[index].qty += change; if(window.cart[index].qty <= 0) window.cart.splice(index, 1); localStorage.setItem('khaugulya_cart', JSON.stringify(window.cart)); window.updateCartBadge(); window.renderCart(); }
         }
 
+        // Updated exponent badge logic
         window.updateCartBadge = function() {
             const badge = document.getElementById('cart-badge'); if(!badge) return;
             let totalItems = window.cart.reduce((sum, item) => sum + item.qty, 0);
             if(totalItems > 0) { 
-                badge.style.display = 'flex'; 
-                if (badge.innerText != totalItems) {
-                    badge.innerText = totalItems; 
-                    badge.classList.add('pop'); 
-                    setTimeout(() => badge.classList.remove('pop'), 200);
-                }
+                badge.style.display = 'flex'; badge.innerText = totalItems; 
+                // Re-trigger animation
+                badge.style.animation = 'none'; void badge.offsetWidth; badge.style.animation = 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             } else { badge.style.display = 'none'; }
         }
 
@@ -670,7 +679,7 @@
         document.addEventListener('DOMContentLoaded', () => { try { window.updateCartBadge(); } catch(e) {} });
     </script>
 
-    <!-- SCRIPT 2: FIREBASE ENGINE -->
+    <!-- SCRIPT 2: FIREBASE ENGINE (NO-INDEX/LOCAL SORTING) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -695,17 +704,29 @@
             app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); provider = new GoogleAuthProvider(); window.auth = auth;
             onSnapshot(doc(db, "settings", "store_config"), (docSnap) => {
                 if(docSnap.exists()) {
-                    window.storeSettings = docSnap.data(); 
-                    if(!window.storeSettings.storeOpen) { document.getElementById('store-closed-banner').style.display = 'block'; } 
-                    else { document.getElementById('store-closed-banner').style.display = 'none'; }
-                    window.renderMenuItems(window.allMenuItems); // Refresh menu to apply greyout
+                    window.storeSettings = docSnap.data(); const menuContainer = document.getElementById('menu-container');
+                    if(menuContainer) { 
+                        // Full Greyscale Logic
+                        if(!window.storeSettings.storeOpen) { 
+                            menuContainer.classList.add('greyscale-mode'); 
+                            document.getElementById('banner-container').classList.add('greyscale-mode');
+                            document.getElementById('store-closed-banner').classList.add('active');
+                            document.querySelectorAll('.add-btn').forEach(btn => btn.innerText = "CLOSED");
+                        } else { 
+                            menuContainer.classList.remove('greyscale-mode'); 
+                            document.getElementById('banner-container').classList.remove('greyscale-mode');
+                            document.getElementById('store-closed-banner').classList.remove('active');
+                            document.querySelectorAll('.add-btn').forEach(btn => btn.innerText = "ADD");
+                        } 
+                    }
                     if (document.getElementById('view-cart').classList.contains('active')) { window.renderCart(); window.toggleCheckoutUI(); }
                 }
-            });
+            }, (error) => { console.error("Settings Error:", error); });
         } catch(err) { console.error("Firebase Init Failed:", err); }
 
         if(auth) {
             onAuthStateChanged(auth, (user) => {
+                // ALWAYS load menu and banners so guests can browse freely
                 if(window.allMenuItems.length === 0) { loadBanners(); loadMenu(); }
 
                 if (user) {
@@ -715,6 +736,7 @@
                     if(user.photoURL) { document.getElementById('profile-icon-btn').innerHTML = `<img src="${user.photoURL}" class="profile-pic">`; }
                     listenToActiveTab(user.uid); listenToLiveTracking(user.uid); 
                 } else { 
+                    // Guest Mode
                     document.getElementById('profile-icon-btn').innerHTML = `👤`;
                     if(tabUnsubscribe) tabUnsubscribe();
                     if(trackingUnsubscribe) trackingUnsubscribe();
@@ -725,12 +747,19 @@
         window.triggerGoogleLogin = async function() { try { await signInWithPopup(auth, provider); } catch (e) { window.showToast("Login failed.", false); } };
         window.triggerLogout = async function() { try { await signOut(auth); window.closeProfile(); window.showToast("Logged out.", true); } catch (e) {} };
 
+        // FIX: The Tab Tracking Logic Bug. 
+        // Now it checks for 'active', 'preparing', 'ready', and 'payment_pending'
         function listenToActiveTab(uid) {
             const q = query(collection(db, "orders"), where("customerUid", "==", uid));
             tabUnsubscribe = onSnapshot(q, (snapshot) => {
                 const tabUI = document.getElementById('active-tab-ui'); const tabItemsList = document.getElementById('ui-tab-items');
                 let activeOrder = null;
-                snapshot.forEach(docSnap => { let d = docSnap.data(); if(d.type === 'dinein' && d.status === 'active') { activeOrder = { id: docSnap.id, ...d }; } });
+                snapshot.forEach(docSnap => { 
+                    let d = docSnap.data(); 
+                    if(d.type === 'dinein' && ['active', 'preparing', 'ready', 'payment_pending'].includes(d.status)) { 
+                        activeOrder = { id: docSnap.id, ...d }; 
+                    } 
+                });
                 if(!activeOrder) { window.activeTabId = null; tabUI.style.display = 'none'; window.toggleCheckoutUI(); return; }
                 window.activeTabId = activeOrder.id;
                 document.getElementById('ui-tab-table').innerText = activeOrder.tableNumber || "N/A"; document.getElementById('ui-tab-total').innerText = `₹${activeOrder.total}`;
@@ -748,10 +777,11 @@
                 if(!trackBox) return;
 
                 let fetchedOrders = []; snapshot.forEach(docSnap => { fetchedOrders.push({ id: docSnap.id, ...docSnap.data() }); });
+                // LOCAL SORT
                 fetchedOrders.sort((a,b) => { let ta = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0; let tb = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0; return tb - ta; });
                 
                 trackBox.innerHTML = ''; if(activeResList) activeResList.innerHTML = '';
-                let activeFoodCount = 0; let activeResCount = 0; window.userOrdersCache = fetchedOrders;
+                let activeFoodCount = 0; let activeResCount = 0;
 
                 fetchedOrders.forEach(order => {
                     if(order.type === 'table_reservation') {
@@ -771,7 +801,7 @@
 
                 if(activeFoodCount === 0) { trackBox.innerHTML = `<p style="text-align: center; color: var(--text-muted); margin-top: 40px;">No active orders.</p>`; if(trackBadge) trackBadge.style.display = 'none'; } else { if(trackBadge) trackBadge.style.display = 'flex'; }
                 if(activeResBox) { activeResBox.style.display = activeResCount > 0 ? 'block' : 'none'; }
-            });
+            }, (error) => { document.getElementById('live-tracking-box').innerHTML = `<p style="color: var(--danger); text-align: center; padding: 20px;">Tracking Error: ${error.message}</p>`; });
         }
 
         window.renderOrderHistoryUI = function() {
@@ -825,8 +855,8 @@
             try {
                 const container = document.getElementById('banner-container'); const snapshot = await getDocs(collection(db, "banners")); container.innerHTML = '';
                 snapshot.forEach(doc => { const data = doc.data(); container.innerHTML += `<div class="banner-card interactive"><img src="${data.imageUrl}" onerror="this.src='${window.fallbackImageSvg}'"><div class="banner-overlay"><h3 style="color:var(--primary-gold); font-size:1.2rem; font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,0.8);">${data.title}</h3><p style="font-size:0.85rem; font-weight:600; text-shadow:0 2px 4px rgba(0,0,0,0.8); color:var(--text-light);">${data.code}</p></div></div>`; });
-                window.startBannerAutoScroll(); window.apply3DTilt();
-            } catch (e) {}
+                window.startBannerAutoScroll(); 
+            } catch (e) { document.getElementById('banner-container').innerHTML = `<p style="color:var(--danger); padding: 15px;">Banner Error</p>`; }
         }
         
         async function loadMenu() { 
@@ -837,7 +867,7 @@
                 catContainer.innerHTML = `<div class="cat-chip filter-btn" onclick="window.openFilterModal()">⚙️ Filter</div><div class="cat-chip active" onclick="window.filterMenu('All')">All</div>`;
                 categories.forEach(cat => { catContainer.innerHTML += `<div class="cat-chip" onclick="window.filterMenu('${cat.replace(/'/g, "\\'")}')">${cat}</div>`; });
                 window.renderMenuItems(window.allMenuItems);
-            } catch (e) {}
+            } catch (e) { document.getElementById('menu-container').innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--danger); padding: 30px;">Menu Database Error</p>`; }
         }
 
         window.submitPrebook = async function() { 

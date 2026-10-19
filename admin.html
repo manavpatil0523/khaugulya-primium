@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin - Khaugulya Cafe | Premium</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { 
             --primary-gold: #F3C043; --bg-dark: #140A07; 
@@ -79,36 +81,33 @@
         input:checked + .slider { background-color: var(--primary-gold); border-color: var(--primary-gold); }
         input:checked + .slider:before { transform: translateX(26px); background-color: #111; }
 
-        .menu-preview-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--primary-gold); background: rgba(255,255,255,0.05); }
-
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
         .modal-overlay.active { display: flex !important; animation: fadeIn 0.3s; }
 
-        /* PROFESSIONAL 80MM THERMAL RECEIPT CSS */
-        #print-section { display: none; }
+        /* ATTRACTIVE HD THERMAL RECEIPT CSS */
+        #print-section { display: none; background: #fff !important; color: #000 !important; width: 300px; padding: 20px; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.4; border: 1px solid #eee; }
+        
+        .print-header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 12px; margin-bottom: 12px; }
+        .print-header h2 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #000 !important; }
+        .print-header p { margin: 4px 0; font-size: 12px; font-weight: 700; color: #333 !important; }
+        
+        .print-details p { display: flex; justify-content: space-between; margin: 5px 0; font-size: 13px; font-weight: bold; color: #000 !important; }
+        
+        .print-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; font-weight: bold; color: #000 !important; }
+        .print-table th { padding: 8px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
+        .print-table td { padding: 8px 0; border-bottom: 1px dashed #ccc; }
+        
+        .print-summary { border-top: 2px dashed #000; padding-top: 12px; }
+        .print-summary p { display: flex; justify-content: space-between; margin: 5px 0; font-size: 13px; font-weight: bold; color: #000 !important; }
+        .print-summary .grand-total { font-size: 18px; font-weight: 900; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-top: 10px; }
+        
+        .print-footer { text-align: center; margin-top: 25px; font-size: 12px; font-weight: bold; color: #000 !important; border-top: 2px dashed #000; padding-top: 15px; }
+
         @media print {
-            body, html { background: white !important; color: black !important; margin: 0 !important; padding: 0 !important; height: auto !important; }
-            * { box-shadow: none !important; text-shadow: none !important; background: transparent !important; color: black !important; }
+            body, html { background: white !important; margin: 0 !important; padding: 0 !important; }
+            * { box-shadow: none !important; text-shadow: none !important; }
             .admin-nav, .admin-section, .modal-overlay, #custom-toast { display: none !important; }
-            #print-section { 
-                display: block !important; 
-                width: 80mm; 
-                margin: 0 auto; 
-                padding: 2mm 5mm; 
-                font-family: 'Courier New', Courier, monospace; 
-                font-size: 13px; 
-            }
-            .print-header { text-align: center; margin-bottom: 10px; }
-            .print-header h2 { margin: 0; font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; }
-            .print-header p { margin: 2px 0; font-size: 0.9rem; font-weight: 600; }
-            .divider { border-bottom: 1px dashed black; margin: 8px 0; }
-            .print-details p { margin: 3px 0; font-size: 0.9rem; font-weight: bold; }
-            .print-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.9rem; font-weight: bold; }
-            .print-table th { padding: 4px 0; border-bottom: 1px dashed black; }
-            .print-table td { padding: 6px 0; }
-            .print-summary { text-align: right; font-size: 0.95rem; font-weight: bold; margin-top: 10px; }
-            .print-summary p { margin: 3px 0; }
-            .print-footer { text-align: center; margin-top: 15px; font-size: 0.85rem; font-weight: bold; }
+            #print-section { display: block !important; margin: 0 auto; width: 80mm; border: none; padding: 5mm; }
         }
     </style>
 </head>
@@ -123,28 +122,24 @@
         <button class="nav-tab" onclick="window.switchTab('sec-settings', this)">⚙️ Settings</button>
     </div>
 
-    <!-- 80MM THERMAL RECEIPT TEMPLATE (Hidden until print is clicked) -->
+    <!-- PREMIUM 80MM RECEIPT DOM (Hidden until generated) -->
     <div id="print-section">
         <div class="print-header">
             <h2>KHAUGULYA</h2>
             <p>Premium Dining & Delivery</p>
-            <p>Malegaon City</p>
-            <p class="divider"></p>
+            <p>TAX INVOICE</p>
         </div>
         <div id="print-order-details" class="print-details"></div>
-        <p class="divider"></p>
         <table class="print-table">
             <thead>
                 <tr><th style="text-align:left;">Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Amt</th></tr>
             </thead>
             <tbody id="print-items"></tbody>
         </table>
-        <p class="divider"></p>
         <div id="print-summary" class="print-summary"></div>
         <div class="print-footer">
-            <p class="divider"></p>
-            <p>Thank you for visiting!</p>
-            <p>Please come again.</p>
+            <p>Thank you for visiting Khaugulya!</p>
+            <p>Visit us again soon.</p>
         </div>
     </div>
 
@@ -245,11 +240,11 @@
         </div>
     </div>
 
-    <!-- SCRIPT 1: UI LOGIC & PRINT ENGINE -->
+    <!-- SCRIPT 1: UI LOGIC & PDF GENERATOR -->
     <script>
         window.fallbackImageSvg = "https://placehold.co/400x400/23120B/F3C043?text=Food"; 
         window.adminMenuItems = []; 
-        window.allAdminOrders = []; // Stores orders to fetch for receipt printing
+        window.allAdminOrders = []; 
 
         window.switchTab = function(sectionId, element) { document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active')); document.querySelectorAll('.nav-tab').forEach(nav => nav.classList.remove('active')); document.getElementById(sectionId).classList.add('active'); element.classList.add('active'); }
         window.handleMultiImageSelect = function(input, labelId) { if (input.files && input.files.length > 0) { document.getElementById(labelId).innerText = `✅ ${input.files.length} files selected`; } }
@@ -263,20 +258,20 @@
             document.getElementById('edit-menu-modal').classList.add('active');
         }
 
-        // PROFESSIONAL RECEIPT FORMATTING ENGINE
-        window.printReceipt = function(orderId) {
+        // --- PREPARE RECEIPT HTML ENGINE ---
+        window.prepareReceiptDOM = function(orderId) {
             const order = window.allAdminOrders.find(o => o.id === orderId);
-            if(!order) return alert("Order data not found!");
+            if(!order) return false;
             
             let dateObj = order.timestamp?.seconds ? new Date(order.timestamp.seconds * 1000) : new Date();
             let dateStr = dateObj.toLocaleString('en-IN');
             let typeLabel = order.type === 'dinein' ? `Dine-in (Table ${order.tableNumber || 'N/A'})` : 'Pickup';
 
-            let detailsHtml = `<p><strong>Order #:</strong> ${order.id.slice(-5).toUpperCase()}</p>
-                               <p><strong>Date:</strong> ${dateStr}</p>
-                               <p><strong>Type:</strong> ${typeLabel}</p>
-                               <p><strong>Customer:</strong> ${order.customerName || 'Walk-in'}</p>
-                               <p><strong>Phone:</strong> ${order.customerPhone || 'N/A'}</p>`;
+            let detailsHtml = `<p><span>Order #:</span> <span>${order.id.slice(-5).toUpperCase()}</span></p>
+                               <p><span>Date:</span> <span>${dateStr}</span></p>
+                               <p><span>Type:</span> <span>${typeLabel}</span></p>
+                               <p><span>Customer:</span> <span>${order.customerName || 'Walk-in'}</span></p>
+                               <p><span>Phone:</span> <span>${order.customerPhone || 'N/A'}</span></p>`;
             document.getElementById('print-order-details').innerHTML = detailsHtml;
 
             let itemsHtml = '';
@@ -292,13 +287,41 @@
             let fee = window.storeSettings ? (window.storeSettings.handlingFee || 0) : 0;
             let gstCalculated = Math.round((subtotal * gstPercent) / 100);
 
-            let summaryHtml = `<p>Subtotal: ₹${subtotal}</p>
-                               <p>GST (${gstPercent}%): ₹${gstCalculated}</p>
-                               <p>Handling: ₹${fee}</p>
-                               <p style="font-size:1.3rem; font-weight:900; margin-top:5px;">Grand Total: ₹${order.total}</p>`;
+            let summaryHtml = `<p><span>Subtotal:</span> <span>₹${subtotal}</span></p>
+                               <p><span>GST (${gstPercent}%):</span> <span>₹${gstCalculated}</span></p>
+                               <p><span>Handling:</span> <span>₹${fee}</span></p>
+                               <p class="grand-total"><span>Total:</span> <span>₹${order.total}</span></p>`;
             document.getElementById('print-summary').innerHTML = summaryHtml;
+            return true;
+        }
 
-            window.print();
+        // TRIGGER BROWSER PRINT
+        window.printReceipt = function(orderId) {
+            if(window.prepareReceiptDOM(orderId)) window.print();
+        }
+
+        // TRIGGER SECURE PDF DOWNLOAD
+        window.downloadReceipt = function(orderId) {
+            if(!window.prepareReceiptDOM(orderId)) return;
+            const element = document.getElementById('print-section');
+            
+            // Show element briefly off-screen for html2pdf rendering
+            element.style.display = 'block';
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+
+            const opt = {
+              margin:       0,
+              filename:     `Khaugulya_Invoice_${orderId.slice(-5).toUpperCase()}.pdf`,
+              image:        { type: 'jpeg', quality: 1 },
+              html2canvas:  { scale: 3, useCORS: true },
+              jsPDF:        { unit: 'mm', format: [80, 200], orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.display = 'none';
+                element.style.position = 'static';
+            });
         }
     </script>
 
@@ -349,7 +372,7 @@
                 let fetchedOrders = []; snapshot.forEach(docSnap => { fetchedOrders.push({ id: docSnap.id, ...docSnap.data() }); });
                 fetchedOrders.sort((a,b) => { let ta = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0; let tb = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0; return tb - ta; });
                 
-                // Saving globally so the Print Engine can find them
+                // Saving globally so the Print Engine can build the receipt
                 window.allAdminOrders = fetchedOrders;
 
                 fetchedOrders.forEach(order => {
@@ -372,8 +395,9 @@
             else if (order.status === 'payment_pending') { buttonsHtml = `<button class="mini-btn btn-green" onclick="window.updateOrderStatus('${order.id}', 'completed')">💰 Payment Received</button>`; } 
             else if (order.status === 'ready') { buttonsHtml = `<button class="mini-btn btn-outline" onclick="window.updateOrderStatus('${order.id}', 'completed')">Clear / Delivered</button>`; }
 
-            // PRINT BUTTON ADDED HERE
-            buttonsHtml += `<button class="mini-btn" style="background:#FFF5E4; color:#111; font-weight:800;" onclick="window.printReceipt('${order.id}')">🖨️ Print Bill</button>`;
+            // NEW: Print & Download PDF Buttons
+            buttonsHtml += `<button class="mini-btn" style="background:#FFF5E4; color:#111; font-weight:800;" onclick="window.printReceipt('${order.id}')">🖨️ Print</button>`;
+            buttonsHtml += `<button class="mini-btn" style="background:var(--primary-gold); color:#111; font-weight:800;" onclick="window.downloadReceipt('${order.id}')">⬇️ Download</button>`;
 
             return `<div class="item-card glass-card" style="${cardStyle}"><div class="item-header"><div class="item-title">#${order.id.slice(-5).toUpperCase()}</div><div class="badge ${badgeClass}">${badgeText}</div></div><div><p style="font-size:0.9rem; margin-bottom:5px;"><strong>Name:</strong> ${order.customerName || 'Unknown'}</p><p style="font-size:0.9rem; margin-bottom:5px;"><strong>Phone:</strong> ${order.customerPhone || 'N/A'}</p><p style="font-size:0.9rem; margin-bottom:5px;"><strong>Status:</strong> <span style="color: var(--primary-gold); text-transform: uppercase;">${order.status}</span></p><p style="font-size:1.1rem; margin-bottom:10px;"><strong>Total:</strong> <span style="color: var(--primary-gold); font-weight: 800;">₹${order.total}</span></p><div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; font-size: 0.9rem; line-height: 1.6;">${itemsHtml}</div></div><div class="flex-btns">${buttonsHtml}</div></div>`;
         }
@@ -445,23 +469,4 @@
                 await addDoc(collection(db, "banners"), { title: title, code: code || "", imageUrl: finalImageUrl, timestamp: serverTimestamp() });
                 document.getElementById('banner-title').value = ''; document.getElementById('banner-code').value = ''; document.getElementById('banner-upload-label').innerText = "📁 Select Image"; fileInput.value = '';
                 alert("✅ Banner Live!"); fetchAdminBanners();
-            } catch(e) { alert("❌ Error."); } finally { const btn = document.getElementById('btn-add-banner'); btn.innerText = "Upload & Push Live"; btn.disabled = false; }
-        }
-
-        async function fetchAdminBanners() {
-            try {
-                const container = document.getElementById('admin-banner-list'); const q = query(collection(db, "banners")); const snapshot = await getDocs(q); container.innerHTML = '';
-                if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding: 20px;">No banners.</p>'; return; }
-                let items = []; snapshot.forEach(docSnap => { items.push({id: docSnap.id, ...docSnap.data()}); });
-                items.sort((a,b) => { let ta = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0; let tb = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0; return tb - ta; });
-                items.forEach(item => {
-                    container.innerHTML += `<div class="item-card glass-card" style="position: relative; overflow: hidden; padding: 25px;"><img src="${item.imageUrl}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; opacity:0.6;"><div style="display: flex; justify-content: space-between; align-items: center; position:relative; z-index:1;"><div><h4 style="color: var(--primary-gold); font-size:1.3rem; font-weight:800; text-shadow:0 2px 5px #000;">${item.title}</h4><p style="font-size: 0.9rem; font-weight:600; text-shadow:0 2px 5px #000;">${item.code}</p></div><button class="mini-btn btn-red" style="width: auto; min-width: auto; background:rgba(255,71,87,0.8); color:#fff;" onclick="window.deleteBanner('${item.id}')">Remove</button></div></div>`;
-                });
-            } catch(e) { document.getElementById('admin-banner-list').innerHTML = `<p style="color:var(--danger); text-align: center; padding: 20px;">Error: ${e.message}</p>`; }
-        }
-        window.deleteBanner = async function(id) { if(confirm("Remove banner?")) { try { await deleteDoc(doc(db, "banners", id)); fetchAdminBanners(); } catch(e) {} } }
-        
-        fetchAdminMenu(); fetchAdminBanners();
-    </script>
-</body>
-</html>
+            } catch(e) { alert("❌ Error."); } finally { const btn = document.getElementById('btn-add-banner'); btn
